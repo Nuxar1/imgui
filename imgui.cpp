@@ -3846,12 +3846,6 @@ void ImGui::SetActiveID(ImGuiID id, ImGuiWindow* window)
             IMGUI_DEBUG_LOG_ACTIVEID("SetActiveID() cancel MovingWindow\n");
             g.MovingWindow = NULL;
         }
-
-        // This could be written in a more general way (e.g associate a hook to ActiveId),
-        // but since this is currently quite an exception we'll leave it as is.
-        // One common scenario leading to this is: pressing Key ->NavMoveRequestApplyResult() -> ClearActiveId()
-        if (g.InputTextState.ID == g.ActiveId)
-            InputTextDeactivateHook(g.ActiveId);
     }
 
     // Set active id
