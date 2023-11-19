@@ -3835,19 +3835,23 @@ void ImGui::SetActiveID(ImGuiID id, ImGuiWindow* window)
 {
     ImGuiContext& g = *GImGui;
 
+    // Clear previous active id
+    if (g.ActiveId != 0)
+    {
+        // While most behaved code would make an effort to not steal active id during window move/drag operations,
+        // we at least need to be resilient to it. Canceling the move is rather aggressive and users of 'master' branch
+        // may prefer the weird ill-defined half working situation ('docking' did assert), so may need to rework that.
+        if (g.MovingWindow != NULL && g.ActiveId == g.MovingWindow->MoveId)
+        {
+            IMGUI_DEBUG_LOG_ACTIVEID("SetActiveID() cancel MovingWindow\n");
+            g.MovingWindow = NULL;
+        }
 
-    for (int i = 0; i < DC.Layouts.Data.Size; i++)
-    {
-        ImGuiLayout* layout = (ImGuiLayout*)DC.Layouts.Data[i].val_p;
-        IM_DELETE(layout);
-    }
-    // While most behaved code would make an effort to not steal active id during window move/drag operations,
-    // we at least need to be resilient to it. Cancelling the move is rather aggressive and users of 'master' branch
-    // may prefer the weird ill-defined half working situation ('docking' did assert), so may need to rework that.
-    if (g.MovingWindow != NULL && g.ActiveId == g.MovingWindow->MoveId)
-    {
-        IMGUI_DEBUG_LOG_ACTIVEID("SetActiveID() cancel MovingWindow\n");
-        g.MovingWindow = NULL;
+        // This could be written in a more general way (e.g associate a hook to ActiveId),
+        // but since this is currently quite an exception we'll leave it as is.
+        // One common scenario leading to this is: pressing Key ->NavMoveRequestApplyResult() -> ClearActiveId()
+        if (g.InputTextState.ID == g.ActiveId)
+            InputTextDeactivateHook(g.ActiveId);
     }
 
     // Set active id
